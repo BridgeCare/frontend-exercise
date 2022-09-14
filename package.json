@@ -11,6 +11,7 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
   },
   "dependencies": {
+    "@vueform/multiselect": "^2.5.2",
     "vue": "^3.2.38"
   },
   "devDependencies": {

@@ -351,6 +351,11 @@
   resolved "https://registry.yarnpkg.com/@vue/test-utils/-/test-utils-2.0.2.tgz#0b5edd683366153d5bc5a91edc62f292118710eb"
   integrity sha512-E2P4oXSaWDqTZNbmKZFVLrNN/siVN78YkEqs7pHryWerrlZR9bBFLWdJwRoguX45Ru6HxIflzKl4vQvwRMwm5g==
 
+"@vueform/multiselect@^2.5.2":
+  version "2.5.2"
+  resolved "https://registry.yarnpkg.com/@vueform/multiselect/-/multiselect-2.5.2.tgz#f8d6c13ba406aa846573302f912722464b421c88"
+  integrity sha512-TSnngBaXfNNV+anFYpqzLkJLTEFdkjBzHsffMBGcmkyPAH78WTbgE2wXLzw48dnCXRhxrP+1fNRXqf6JppPwWg==
+
 abab@^2.0.6:
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/abab/-/abab-2.0.6.tgz#41b80f2c871d19686216b82309231cfd3cb3d291"

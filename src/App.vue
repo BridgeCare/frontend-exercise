@@ -4,6 +4,7 @@ https://todomvc.com/
 -->
 
 <script>
+import { defineComponent, ref, watch, onMounted, computed } from 'vue';
 const STORAGE_KEY = "vue-todomvc";
 
 const filters = {
@@ -12,106 +13,140 @@ const filters = {
   completed: (todos) => todos.filter((todo) => todo.completed),
 };
 
-export default {
-  data: () => ({
-    todos: JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"),
-    editedTodo: null,
-    visibility: "all",
-  }),
+export default defineComponent({
+  name: 'TodoHome',
+  setup() {
+    let todos = ref(JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"))
+    let editedTodo = ref(null)
+    let visibility = ref("all")
+    let newTag = ref("")
+    let tags = ref([])
 
-  watch: {
-    todos: {
-      handler(todos) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+    const filteredTodos = computed(() => {
+      return filters[visibility.value](todos.value);
+    })
+
+    const remaining = computed(() => {
+      return filters.active(todos.value).length;
+    })
+
+    watch(
+      todos,
+      list => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
       },
-      deep: true,
-    },
-  },
+      { immediate: true }
+    )
 
-  mounted() {
-    window.addEventListener("hashchange", this.onHashChange);
-    this.onHashChange();
-  },
+    const toggleAll = (e) => {
+      todos.value.forEach((todo) => (todo.completed = e.target.checked));
+    }
 
-  computed: {
-    filteredTodos() {
-      return filters[this.visibility](this.todos);
-    },
-    remaining() {
-      return filters.active(this.todos).length;
-    },
-  },
-
-  methods: {
-    toggleAll(e) {
-      this.todos.forEach((todo) => (todo.completed = e.target.checked));
-    },
-
-    addTodo(e) {
+    const addTodo = (e) => {
       const value = e.target.value.trim();
       if (!value) {
         return;
       }
-      this.todos.push({
+
+      todos.value.push({
         id: Date.now(),
         title: value,
         completed: false,
+        tag: newTag.value,
       });
+
+      if (!tags.value.find(tag => tag === newTag.value)) {
+        tags.value.push(newTag.value)
+      }
       e.target.value = "";
-    },
+      newTag.value = "";
+    }
 
-    removeTodo(todo) {
-      this.todos.splice(this.todos.indexOf(todo), 1);
-    },
+    const removeTodo = (todo) => {
+      todos.value.splice(todos.value.indexOf(todo), 1);
+    }
 
-    editTodo(todo) {
-      this.beforeEditCache = todo.title;
-      this.editedTodo = todo;
-    },
+    const editTodo = (todo) => {
+      // this.beforeEditCache = todo.title;
+      editedTodo.value = todo;
+    }
 
-    doneEdit(todo) {
-      if (!this.editedTodo) {
+    const doneEdit = (todo) => {
+      if (!editedTodo.value) {
         return;
       }
-      this.editedTodo = null;
+      editedTodo.value = null;
       todo.title = todo.title.trim();
       if (!todo.title) {
-        this.removeTodo(todo);
+        removeTodo(todo);
       }
-    },
+    }
 
-    cancelEdit(todo) {
-      this.editedTodo = null;
-      todo.title = this.beforeEditCache;
-    },
+    const cancelEdit = (todo) => {
+      editedTodo.value = null;
+      // todo.title = this.beforeEditCache;
+    }
 
-    removeCompleted() {
-      this.todos = filters.active(this.todos);
-    },
+    const removeCompleted = () => {
+      todos.value = filters.active(todos.value);
+    }
 
-    onHashChange() {
-      var visibility = window.location.hash.replace(/#\/?/, "");
-      if (filters[visibility]) {
-        this.visibility = visibility;
+    const onHashChange = () => {
+      const newVisibility = window.location.hash.replace(/#\/?/, "");
+      if (filters[newVisibility]) {
+        visibility.value = newVisibility;
       } else {
         window.location.hash = "";
-        this.visibility = "all";
+        visibility.value = "all";
       }
-    },
-  },
-};
+    }
+
+    const handleChangeNewTag = (event) => {
+      event.preventDefault()
+      newTag.value = event.target.value;
+    }
+
+    onMounted(() => {
+      window.addEventListener("hashchange", onHashChange);
+      onHashChange();
+    })
+
+    return {
+      todos,
+      tags,
+      filteredTodos,
+      remaining,
+      toggleAll,
+      addTodo,
+      removeTodo,
+      editTodo,
+      doneEdit,
+      cancelEdit,
+      removeCompleted,
+      handleChangeNewTag
+    }
+  }
+})
 </script>
 
 <template>
   <section class="todoapp">
     <header class="header">
       <h1>todos</h1>
-      <input
-        class="new-todo"
-        autofocus
-        placeholder="What needs to be done?"
-        @keyup.enter="addTodo"
-      />
+      <div class="new-todo-container">
+        <input
+          class="new-todo"
+          autofocus
+          placeholder="What needs to be done?"
+          @keyup.enter="addTodo"
+        />
+        <input
+          class="new-todo-tag"
+          placeholder="Tag"
+          :value="newTag"
+          @keyup="handleChangeNewTag"
+        />
+    </div>
     </header>
     <section class="main" v-show="todos.length">
       <input
@@ -131,7 +166,7 @@ export default {
         >
           <div class="view">
             <input class="toggle" type="checkbox" v-model="todo.completed" />
-            <label @dblclick="editTodo(todo)">{{ todo.title }}</label>
+            <label class="label" @dblclick="editTodo(todo)">{{ todo.title }}<span class="tag">{{ todo.tag }}</span></label>
             <button class="destroy" @click="removeTodo(todo)"></button>
           </div>
           <input
@@ -168,6 +203,7 @@ export default {
             >Completed</a
           >
         </li>
+
       </ul>
       <button
         class="clear-completed"
@@ -182,4 +218,23 @@ export default {
 
 <style>
 @import "https://unpkg.com/todomvc-app-css@2.4.1/index.css";
+
+.new-todo-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.new-todo-tag {
+  width: 70px;
+}
+
+.label {
+  display: flex;
+  justify-content: space-between;
+}
+
+.tag {
+  font-size: 12px;
+  margin-left: 10px;
+}
 </style>
